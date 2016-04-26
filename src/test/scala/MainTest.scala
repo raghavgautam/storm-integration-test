@@ -11,6 +11,7 @@ import org.testng.{Assert, TestNG}
 import org.testng.annotations._
 
 import scala.collection.JavaConverters._
+import scala.reflect.io.File
 
 class MainTest extends TestNG with TestNGSuiteLike {
   /*
@@ -34,7 +35,10 @@ class MainTest extends TestNG with TestNGSuiteLike {
   val log = Logger.getLogger(this.getClass.getSimpleName)
   @Test(enabled = true)
   def scalaTest() = {
-    log.info(">" * 80 + "scala")
+    log.error(">" * 80 + "scala")
+    val buildJar: String = System.getProperty("buildJar")
+    log.error(s"buildJar = $buildJar")
+    log.error(s"exists = ${File(buildJar).exists}")
     val conf: util.Map[_, _] = Utils.readStormConfig()
     val topologyBuilder = new TopologyBuilder()
     val topologyName: String = "TestTopology"
