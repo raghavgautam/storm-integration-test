@@ -84,6 +84,11 @@
                                     </excludes>
                                 </filter>
                             </filters>
+                            <artifactSet>
+                                <excludes>
+                                    <exclude>org.apache.storm:storm-core</exclude>
+                                </excludes>
+                            </artifactSet>
                         </configuration>
                     </execution>
                 </executions>
@@ -214,10 +219,8 @@
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-core</artifactId>
             <version>${env.stormjarVersion}</version>
-            <type>jar</type>
-            <scope>provided</scope>
         </dependency>
-        <dependency>
+        <!--dependency>
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-hdfs</artifactId>
             <version>${env.stormjarVersion}</version>
@@ -239,7 +242,7 @@
             <version>${env.stormjarVersion}</version>
             <type>jar</type>
         </dependency>
-        <!--dependency>
+        <dependency>
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-hbase</artifactId>
             <version>${env.stormjarVersion}</version>
