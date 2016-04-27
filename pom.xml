@@ -42,7 +42,7 @@
     </repositories>
 
     <build>
-        <defaultGoal>test</defaultGoal>
+        <defaultGoal>integration-test</defaultGoal>
         <testResources>
             <testResource>
                 <directory>${project.basedir}/src/test/java</directory>
