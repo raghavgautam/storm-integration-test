@@ -1,5 +1,6 @@
 package com.hortonworks.storm.st;
 
+import org.apache.storm.ExclamationTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.KillOptions;
 import org.apache.storm.generated.Nimbus;
@@ -15,7 +16,7 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.io.File;
-import java.util.Map;
+import java.util.*;
 
 public class MainTest {
     private Logger log = LoggerFactory.getLogger(this.getClass().getSimpleName());
@@ -23,18 +24,20 @@ public class MainTest {
     @Test
     public void submissionTest() throws TException {
         log.error(StringUtils.repeat(">", 80) + "scala");
-        String buildJar = System.getProperty("buildJar");
-        log.error("buildJar = " + buildJar);
-        log.error("exists = " + (buildJar != null && new File(buildJar).exists()));
+        String jarFile = getJarPath();
         Map conf = Utils.readStormConfig();
         String topologyName = "TestTopology";
         Nimbus.Client client = NimbusClient.getConfiguredClient(conf).getClient();
         log.info("Cluster info: " + client.getClusterInfo());
-        String jarFile = buildJar!=null ? buildJar : "/Users/temp/tmp/storm-integration-test-1.0-SNAPSHOT.jar";
         try {
             String jsonConf = JSONValue.toJSONString(conf);
+            log.info("setting storm.jar to: " + jarFile);
             System.setProperty("storm.jar", jarFile);
-            StormSubmitter.submitTopologyWithProgressBar(topologyName, conf, getTopology());
+            Map<String, Object> submitConf = new HashMap<>();
+            submitConf.put("storm.zookeeper.topology.auth.scheme", "digest");
+            submitConf.put("topology.workers", 3);
+            submitConf.put("topology.debug", true);
+            StormSubmitter.submitTopologyWithProgressBar(topologyName, submitConf, getTopology());
             try {
                 Thread.sleep(30 * 1000);
             } catch (InterruptedException ignore) {
@@ -49,6 +52,26 @@ public class MainTest {
             }
         }
         Assert.assertEquals(true, true, "Mismatch for case");
+    }
+
+    private String getJarPath() {
+        List<String> jarPaths = Arrays.asList(
+                System.getProperty("buildJar"),
+                "/Users/temp/storm-integration-test/target/storm-integration-test-1.0.1-SNAPSHOT.jar",
+                "/Users/temp/tmp/storm-integration-test-1.0.1-SNAPSHOT.jar"
+        );
+        String jarFile = null;
+        for (String jarPath : jarPaths) {
+            boolean existsFlag = jarPath != null && new File(jarPath).exists();
+            log.debug("jarPath = " + jarPath + " exists = " + existsFlag);
+            if (existsFlag) {
+                jarFile = jarPath;
+                break;
+            }
+        }
+        Assert.assertNotNull(jarFile, "Couldn't detect a suitable jar file for uploading.");
+        log.info("jarFile = " + jarFile);
+        return jarFile;
     }
 
     private StormTopology getTopology() {
