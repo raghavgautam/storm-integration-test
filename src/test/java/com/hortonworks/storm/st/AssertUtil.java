@@ -27,4 +27,8 @@ public class AssertUtil {
         Assert.assertNotNull(path, "Supplied path was expected to be non null, found: " + path);
         Assert.assertTrue(path.exists(), "Supplied path was expected to be non null, found: " + path);
     }
+
+    public static void assertOneElement(Collection<?> collection) {
+        Assert.assertEquals(collection.size(), 1, "Expected only one element in the collection, found: " + collection);
+    }
 }

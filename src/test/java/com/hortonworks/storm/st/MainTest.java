@@ -2,13 +2,14 @@ package com.hortonworks.storm.st;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.ExclamationTopology;
-import org.apache.storm.generated.*;
+import org.apache.storm.generated.Nimbus;
+import org.apache.storm.generated.StormTopology;
+import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.thrift.TException;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.Map;
@@ -22,21 +23,19 @@ public class MainTest {
         String topologyName = "TestTopology";
         Nimbus.Client client = getNimbusClient();
         AssertUtil.empty(TopologyUtils.getSummaries(client));
+        TopoWrap topo = new TopoWrap(client, topologyName, getTopology());
+        topo.submit();
         try {
-            TopologyUtils.submit(topologyName, getTopology());
             for(int i=0; i < 10; ++i) {
-                TopologySummary activeTopo = TopologyUtils.getOneActive(client);
-                TopologyInfo topologyInfo = TopologyUtils.getInfo(client, activeTopo);
-                log.info(activeTopo.toString());
+                TopologyInfo topologyInfo = topo.getInfo();
                 log.info(topologyInfo.toString());
                 TimeUtil.sleepSec(6);
             }
             log.info("Continuing...");
         } finally {
-            TopologyUtils.killSilently(topologyName, client);
+            topo.killQuietly();
             AssertUtil.nonEmpty(TopologyUtils.getKilled(client));
         }
-        Assert.assertEquals(true, true, "Mismatch for case");
     }
 
     private Nimbus.Client getNimbusClient() {
