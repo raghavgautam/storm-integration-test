@@ -3,6 +3,7 @@ package com.hortonworks.storm.st;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.*;
 import org.apache.storm.thrift.TException;
@@ -20,22 +21,22 @@ import java.util.*;
 public class TopologyUtils {
     private static Logger log = LoggerFactory.getLogger(TopologyUtils.class);
 
-    public static List<TopologySummary> getTopologySummaries(Nimbus.Client client) throws TException {
+    public static List<TopologySummary> getSummaries(Nimbus.Client client) throws TException {
         final ClusterSummary clusterInfo = client.getClusterInfo();
         log.info("Cluster info: " + clusterInfo);
         return clusterInfo.get_topologies();
     }
 
-    public static List<TopologySummary> getActiveTopologies(final Nimbus.Client client) throws TException {
+    public static List<TopologySummary> getActive(final Nimbus.Client client) throws TException {
         return getTopologiesWithStatus(client, "active");
     }
 
-    public static List<TopologySummary> getKilledTopologies(final Nimbus.Client client) throws TException {
+    public static List<TopologySummary> getKilled(final Nimbus.Client client) throws TException {
         return getTopologiesWithStatus(client, "killed");
     }
 
-    public static List<TopologySummary> getTopologiesWithStatus(final Nimbus.Client client, final String expectedStatus) throws TException {
-        Collection<TopologySummary> topologySummaries = getTopologySummaries(client);
+    private static List<TopologySummary> getTopologiesWithStatus(final Nimbus.Client client, final String expectedStatus) throws TException {
+        Collection<TopologySummary> topologySummaries = getSummaries(client);
         Collection<TopologySummary> filteredSummary = Collections2.filter(topologySummaries, new Predicate<TopologySummary>() {
             @Override
             public boolean apply(@Nullable TopologySummary input) {
@@ -45,7 +46,7 @@ public class TopologyUtils {
         return new ArrayList<>(filteredSummary);
     }
 
-    public static void submitTopology(String topologyName, StormTopology topology) throws AlreadyAliveException, InvalidTopologyException, AuthorizationException {
+    public static void submit(String topologyName, StormTopology topology) throws AlreadyAliveException, InvalidTopologyException, AuthorizationException {
         Map<String, Object> submitConf = getSubmitConf();
         String jarFile = getJarPath();
         log.info("setting storm.jar to: " + jarFile);
@@ -82,5 +83,14 @@ public class TopologyUtils {
         Assert.assertNotNull(jarFile, "Couldn't detect a suitable jar file for uploading.");
         log.info("jarFile = " + jarFile);
         return jarFile;
+    }
+
+    public static void killSilently(String topologyName, Nimbus.Client client) {
+        try {
+            client.killTopologyWithOpts(topologyName, new KillOptions());
+            log.info("Topology killed: " + topologyName);
+        } catch (Throwable e){
+            log.warn("Couldn't kill topology: " + topologyName + " Exception: " + ExceptionUtils.getFullStackTrace(e));
+        }
     }
 }

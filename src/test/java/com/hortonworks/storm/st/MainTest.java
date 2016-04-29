@@ -22,24 +22,19 @@ public class MainTest {
         log.error(StringUtils.repeat(">", 80) + "scala");
         String topologyName = "TestTopology";
         Nimbus.Client client = getNimbusClient();
-        AssertUtil.empty(TopologyUtils.getTopologySummaries(client));
+        AssertUtil.empty(TopologyUtils.getSummaries(client));
         try {
-            TopologyUtils.submitTopology(topologyName, getTopology());
+            TopologyUtils.submit(topologyName, getTopology());
             for(int i=0; i < 10; ++i) {
-                List<TopologySummary> topologySummaries = TopologyUtils.getActiveTopologies(client);
+                List<TopologySummary> topologySummaries = TopologyUtils.getActive(client);
                 AssertUtil.nonEmpty(topologySummaries);
                 log.info(topologySummaries.toString());
                 TimeUtil.sleepSec(6);
             }
             log.info("Continuing...");
         } finally {
-            try {
-                client.killTopologyWithOpts(topologyName, new KillOptions());
-                log.info("Topology killed.");
-                AssertUtil.nonEmpty(TopologyUtils.getKilledTopologies(client));
-            } catch (Throwable e){
-                log.warn("Couldn't kill topology: " + topologyName);
-            }
+            TopologyUtils.killSilently(topologyName, client);
+            AssertUtil.nonEmpty(TopologyUtils.getKilled(client));
         }
         Assert.assertEquals(true, true, "Mismatch for case");
     }
