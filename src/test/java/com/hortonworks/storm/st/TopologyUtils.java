@@ -93,4 +93,15 @@ public class TopologyUtils {
             log.warn("Couldn't kill topology: " + topologyName + " Exception: " + ExceptionUtils.getFullStackTrace(e));
         }
     }
+
+    public static TopologySummary getOneActive(Nimbus.Client client) throws TException {
+        List<TopologySummary> topoSummaries = getActive(client);
+        AssertUtil.nonEmpty(topoSummaries);
+        Assert.assertEquals(topoSummaries.size(), 1, "Expected one topology to be running, found: " + topoSummaries);
+        return topoSummaries.get(0);
+    }
+
+    public static TopologyInfo getInfo(Nimbus.Client client, TopologySummary topologySummary) throws TException {
+        return client.getTopologyInfo(topologySummary.get_id());
+    }
 }

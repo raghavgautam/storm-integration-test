@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.List;
 import java.util.Map;
 
 public class MainTest {
@@ -26,9 +25,10 @@ public class MainTest {
         try {
             TopologyUtils.submit(topologyName, getTopology());
             for(int i=0; i < 10; ++i) {
-                List<TopologySummary> topologySummaries = TopologyUtils.getActive(client);
-                AssertUtil.nonEmpty(topologySummaries);
-                log.info(topologySummaries.toString());
+                TopologySummary activeTopo = TopologyUtils.getOneActive(client);
+                TopologyInfo topologyInfo = TopologyUtils.getInfo(client, activeTopo);
+                log.info(activeTopo.toString());
+                log.info(topologyInfo.toString());
                 TimeUtil.sleepSec(6);
             }
             log.info("Continuing...");
