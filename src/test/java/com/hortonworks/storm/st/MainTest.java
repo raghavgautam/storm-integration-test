@@ -30,7 +30,7 @@ public class MainTest {
     @Test
     public void submissionTest() throws TException {
         AssertUtil.empty(TopologyUtils.getSummaries(client));
-        topo.submit();
+        topo.submitSuccessfully();
         for(int i=0; i < 10; ++i) {
             TopologyInfo topologyInfo = topo.getInfo();
             log.info(topologyInfo.toString());

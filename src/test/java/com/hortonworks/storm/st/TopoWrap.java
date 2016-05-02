@@ -4,13 +4,19 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
+import org.apache.commons.io.FileUtils;
+import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.*;
 import org.apache.storm.thrift.TException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.File;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -18,6 +24,7 @@ import java.util.Map;
  * Created by temp on 4/29/16.
  */
 public class TopoWrap {
+    private static Logger log = LoggerFactory.getLogger(TopoWrap.class);
     private final Nimbus.Client client;
     private final String name;
     private final StormTopology topology;
@@ -29,8 +36,47 @@ public class TopoWrap {
         this.topology = topology;
     }
 
-    public void submit() throws TException {
-        TopologyUtils.submit(name, topology);
+    public void submit() throws AlreadyAliveException, InvalidTopologyException, AuthorizationException {
+        Map<String, Object> submitConf = getSubmitConf();
+        String jarFile = getJarPath();
+        log.info("setting storm.jar to: " + jarFile);
+        System.setProperty("storm.jar", jarFile);
+        StormSubmitter.submitTopologyWithProgressBar(name, submitConf, topology);
+    }
+
+    private static Map<String, Object> getSubmitConf() {
+        Map<String, Object> submitConf = new HashMap<>();
+        submitConf.put("storm.zookeeper.topology.auth.scheme", "digest");
+        submitConf.put("topology.workers", 3);
+        submitConf.put("topology.debug", true);
+        return submitConf;
+    }
+
+    private static String getJarPath() {
+        final String USER_DIR = "user.dir";
+        String userDirVal = System.getProperty(USER_DIR);
+        Assert.assertNotNull(userDirVal, "property " + USER_DIR + " was not set.");
+        File projectDir = new File(userDirVal);
+        AssertUtil.exists(projectDir);
+        Collection<File> jarFiles = FileUtils.listFiles(projectDir, new String[]{"jar"}, true);
+        log.debug("Found jar files: " + jarFiles);
+        AssertUtil.nonEmpty(jarFiles);
+        String jarFile = null;
+        for (File jarPath : jarFiles) {
+            log.debug("jarPath = " + jarPath);
+            if (jarPath != null && !jarPath.getPath().contains("original")) {
+                AssertUtil.exists(jarPath);
+                jarFile = jarPath.getAbsolutePath();
+                break;
+            }
+        }
+        Assert.assertNotNull(jarFile, "Couldn't detect a suitable jar file for uploading.");
+        log.info("jarFile = " + jarFile);
+        return jarFile;
+    }
+
+    public void submitSuccessfully() throws TException {
+        submit();
         TopologySummary topologySummary = getSummary();
         Assert.assertEquals(topologySummary.get_status().toLowerCase(), "active", "Topology must be active.");
         id = topologySummary.get_id();

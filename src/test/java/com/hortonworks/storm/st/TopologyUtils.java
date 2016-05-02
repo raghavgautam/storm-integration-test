@@ -46,45 +46,6 @@ public class TopologyUtils {
         return new ArrayList<>(filteredSummary);
     }
 
-    public static void submit(String topologyName, StormTopology topology) throws AlreadyAliveException, InvalidTopologyException, AuthorizationException {
-        Map<String, Object> submitConf = getSubmitConf();
-        String jarFile = getJarPath();
-        log.info("setting storm.jar to: " + jarFile);
-        System.setProperty("storm.jar", jarFile);
-        StormSubmitter.submitTopologyWithProgressBar(topologyName, submitConf, topology);
-    }
-
-    private static Map<String, Object> getSubmitConf() {
-        Map<String, Object> submitConf = new HashMap<>();
-        submitConf.put("storm.zookeeper.topology.auth.scheme", "digest");
-        submitConf.put("topology.workers", 3);
-        submitConf.put("topology.debug", true);
-        return submitConf;
-    }
-
-    private static String getJarPath() {
-        final String USER_DIR = "user.dir";
-        String userDirVal = System.getProperty(USER_DIR);
-        Assert.assertNotNull(userDirVal, "property " + USER_DIR + " was not set.");
-        File projectDir = new File(userDirVal);
-        AssertUtil.exists(projectDir);
-        Collection<File> jarFiles = FileUtils.listFiles(projectDir, new String[]{"jar"}, true);
-        log.debug("Found jar files: " + jarFiles);
-        AssertUtil.nonEmpty(jarFiles);
-        String jarFile = null;
-        for (File jarPath : jarFiles) {
-            log.debug("jarPath = " + jarPath);
-            if (jarPath != null && !jarPath.getPath().contains("original")) {
-                AssertUtil.exists(jarPath);
-                jarFile = jarPath.getAbsolutePath();
-                break;
-            }
-        }
-        Assert.assertNotNull(jarFile, "Couldn't detect a suitable jar file for uploading.");
-        log.info("jarFile = " + jarFile);
-        return jarFile;
-    }
-
     public static void killSilently(String topologyName, Nimbus.Client client) {
         try {
             client.killTopologyWithOpts(topologyName, new KillOptions());
