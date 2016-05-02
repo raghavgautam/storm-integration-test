@@ -29,6 +29,15 @@ public class MainTest {
             for(int i=0; i < 10; ++i) {
                 TopologyInfo topologyInfo = topo.getInfo();
                 log.info(topologyInfo.toString());
+                long spoutEmittedCount = topo.getAllTimeEmittedCount("word");
+                long exclaim1EmittedCount = topo.getAllTimeEmittedCount("exclaim1");
+                long exclaim2EmittedCount = topo.getAllTimeEmittedCount("exclaim2");
+                log.info("spoutEmittedCount for spout 'word' = " + spoutEmittedCount);
+                log.info("exclaim1EmittedCount = " + exclaim1EmittedCount);
+                log.info("exclaim2EmittedCount = " + exclaim2EmittedCount);
+                if (spoutEmittedCount > 10000 || exclaim2EmittedCount > 1000) {
+                    break;
+                }
                 TimeUtil.sleepSec(6);
             }
             log.info("Continuing...");
