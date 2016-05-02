@@ -25,13 +25,13 @@ import java.util.Map;
  */
 public class TopoWrap {
     private static Logger log = LoggerFactory.getLogger(TopoWrap.class);
-    private final Nimbus.Client client;
+    private final StormCluster cluster;
     private final String name;
     private final StormTopology topology;
     private String id;
 
-    public TopoWrap(Nimbus.Client nimbusClient, String name, StormTopology topology) {
-        this.client = nimbusClient;
+    public TopoWrap(StormCluster cluster, String name, StormTopology topology) {
+        this.cluster = cluster;
         this.name = name;
         this.topology = topology;
     }
@@ -83,7 +83,7 @@ public class TopoWrap {
     }
 
     private TopologySummary getSummary() throws TException {
-        List<TopologySummary> allTopos = TopologyUtils.getSummaries(client);
+        List<TopologySummary> allTopos = cluster.getSummaries();
         Collection<TopologySummary> oneTopo = Collections2.filter(allTopos, new Predicate<TopologySummary>() {
             @Override
             public boolean apply(@Nullable TopologySummary input) {
@@ -95,7 +95,7 @@ public class TopoWrap {
     }
 
     public TopologyInfo getInfo() throws TException {
-        return client.getTopologyInfo(id);
+        return cluster.getNimbusClient().getTopologyInfo(id);
     }
 
     public long getAllTimeEmittedCount(final String componentId) throws TException {
@@ -139,6 +139,6 @@ public class TopoWrap {
     }
 
     public void killQuietly() {
-        TopologyUtils.killSilently(name, client);
+        cluster.killSilently(name);
     }
 }

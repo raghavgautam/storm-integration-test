@@ -17,19 +17,19 @@ import java.util.Map;
 
 public class MainTest {
     private static Logger log = LoggerFactory.getLogger(MainTest.class);
-    Nimbus.Client client = null;
     TopoWrap topo = null;
+    StormCluster cluster;
 
     @BeforeTest
     public void setup() {
-        client = getNimbusClient();
+        cluster = new StormCluster();
         final String topologyName = "TestTopology";
-        topo = new TopoWrap(client, topologyName, getTopology());
+        topo = new TopoWrap(cluster, topologyName, getTopology());
     }
 
     @Test
     public void submissionTest() throws TException {
-        AssertUtil.empty(TopologyUtils.getSummaries(client));
+        AssertUtil.empty(cluster.getSummaries());
         topo.submitSuccessfully();
         for(int i=0; i < 10; ++i) {
             TopologyInfo topologyInfo = topo.getInfo();
@@ -51,11 +51,7 @@ public class MainTest {
     public void tearDown() throws Exception {
         if (topo != null)
             topo.killQuietly();
-        AssertUtil.empty(TopologyUtils.getActive(client));
-    }
-    private Nimbus.Client getNimbusClient() {
-        Map conf = Utils.readStormConfig();
-        return NimbusClient.getConfiguredClient(conf).getClient();
+        AssertUtil.empty(cluster.getActive());
     }
 
     private StormTopology getTopology() {

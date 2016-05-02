@@ -2,41 +2,46 @@ package com.hortonworks.storm.st;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
-import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.*;
 import org.apache.storm.thrift.TException;
+import org.apache.storm.utils.NimbusClient;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 
 import javax.annotation.Nullable;
-import java.io.File;
 import java.util.*;
 
 /**
  * Created by temp on 4/28/16.
  */
-public class TopologyUtils {
-    private static Logger log = LoggerFactory.getLogger(TopologyUtils.class);
+public class StormCluster {
+    private static Logger log = LoggerFactory.getLogger(StormCluster.class);
+    private final Nimbus.Client client;
 
-    public static List<TopologySummary> getSummaries(Nimbus.Client client) throws TException {
+    public StormCluster() {
+        Map conf = Utils.readStormConfig();
+        this.client = NimbusClient.getConfiguredClient(conf).getClient();
+    }
+
+    public List<TopologySummary> getSummaries() throws TException {
         final ClusterSummary clusterInfo = client.getClusterInfo();
         log.info("Cluster info: " + clusterInfo);
         return clusterInfo.get_topologies();
     }
 
-    public static List<TopologySummary> getActive(final Nimbus.Client client) throws TException {
-        return getTopologiesWithStatus(client, "active");
+    public List<TopologySummary> getActive() throws TException {
+        return getTopologiesWithStatus("active");
     }
 
-    public static List<TopologySummary> getKilled(final Nimbus.Client client) throws TException {
-        return getTopologiesWithStatus(client, "killed");
+    public List<TopologySummary> getKilled() throws TException {
+        return getTopologiesWithStatus("killed");
     }
 
-    private static List<TopologySummary> getTopologiesWithStatus(final Nimbus.Client client, final String expectedStatus) throws TException {
-        Collection<TopologySummary> topologySummaries = getSummaries(client);
+    private List<TopologySummary> getTopologiesWithStatus(final String expectedStatus) throws TException {
+        Collection<TopologySummary> topologySummaries = getSummaries();
         Collection<TopologySummary> filteredSummary = Collections2.filter(topologySummaries, new Predicate<TopologySummary>() {
             @Override
             public boolean apply(@Nullable TopologySummary input) {
@@ -46,7 +51,7 @@ public class TopologyUtils {
         return new ArrayList<>(filteredSummary);
     }
 
-    public static void killSilently(String topologyName, Nimbus.Client client) {
+    public void killSilently(String topologyName) {
         try {
             client.killTopologyWithOpts(topologyName, new KillOptions());
             log.info("Topology killed: " + topologyName);
@@ -55,14 +60,18 @@ public class TopologyUtils {
         }
     }
 
-    public static TopologySummary getOneActive(Nimbus.Client client) throws TException {
-        List<TopologySummary> topoSummaries = getActive(client);
+    public TopologySummary getOneActive() throws TException {
+        List<TopologySummary> topoSummaries = getActive();
         AssertUtil.nonEmpty(topoSummaries);
         Assert.assertEquals(topoSummaries.size(), 1, "Expected one topology to be running, found: " + topoSummaries);
         return topoSummaries.get(0);
     }
 
-    public static TopologyInfo getInfo(Nimbus.Client client, TopologySummary topologySummary) throws TException {
+    public TopologyInfo getInfo(TopologySummary topologySummary) throws TException {
         return client.getTopologyInfo(topologySummary.get_id());
+    }
+
+    public Nimbus.Client getNimbusClient() {
+        return client;
     }
 }
