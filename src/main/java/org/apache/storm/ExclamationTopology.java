@@ -39,6 +39,10 @@ import java.util.Map;
  */
 public class ExclamationTopology {
 
+  public static final String WORD = "word";
+  public static final String EXCLAIM_1 = "exclaim1";
+  public static final String EXCLAIM_2 = "exclaim2";
+
   public static class ExclamationBolt extends BaseRichBolt {
     OutputCollector _collector;
 
@@ -84,9 +88,9 @@ public class ExclamationTopology {
 
   public static StormTopology getStormTopology() {
     TopologyBuilder builder = new TopologyBuilder();
-    builder.setSpout("word", new TestWordSpout(), 10);
-    builder.setBolt("exclaim1", new ExclamationTopology.ExclamationBolt(), 3).shuffleGrouping("word");
-    builder.setBolt("exclaim2", new ExclamationTopology.ExclamationBolt(), 2).shuffleGrouping("exclaim1");
+    builder.setSpout(WORD, new TestWordSpout(), 10);
+    builder.setBolt(EXCLAIM_1, new ExclamationTopology.ExclamationBolt(), 3).shuffleGrouping(WORD);
+    builder.setBolt(EXCLAIM_2, new ExclamationTopology.ExclamationBolt(), 2).shuffleGrouping(EXCLAIM_1);
     return builder.createTopology();
   }
 }
