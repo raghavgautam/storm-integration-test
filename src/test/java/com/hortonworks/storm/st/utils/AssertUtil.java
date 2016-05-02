@@ -1,4 +1,4 @@
-package com.hortonworks.storm.st;
+package com.hortonworks.storm.st.utils;
 
 import org.testng.Assert;
 

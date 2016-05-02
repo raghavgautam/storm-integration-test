@@ -1,5 +1,8 @@
-package com.hortonworks.storm.st;
+package com.hortonworks.storm.st.helper;
 
+import com.hortonworks.storm.st.utils.AssertUtil;
+import com.hortonworks.storm.st.wrapper.StormCluster;
+import com.hortonworks.storm.st.wrapper.TopoWrap;
 import org.apache.storm.generated.StormTopology;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -8,9 +11,9 @@ import org.testng.annotations.BeforeTest;
  * Created by temp on 5/2/16.
  */
 public abstract class AbstractTest {
-    final StormCluster cluster = new StormCluster();
+    protected final StormCluster cluster = new StormCluster();
     final String topologyName = this.getClass().getSimpleName();
-    final TopoWrap topo = new TopoWrap(cluster, topologyName, getTopology());
+    protected final TopoWrap topo = new TopoWrap(cluster, topologyName, getTopology());
 
     @BeforeTest
     public void setup() {

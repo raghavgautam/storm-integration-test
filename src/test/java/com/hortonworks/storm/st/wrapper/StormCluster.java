@@ -1,7 +1,8 @@
-package com.hortonworks.storm.st;
+package com.hortonworks.storm.st.wrapper;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
+import com.hortonworks.storm.st.utils.AssertUtil;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.storm.generated.*;
 import org.apache.storm.thrift.TException;
