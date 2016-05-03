@@ -6,6 +6,8 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import com.hortonworks.storm.st.utils.AssertUtil;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.*;
 import org.apache.storm.thrift.TException;
@@ -16,10 +18,10 @@ import org.testng.Assert;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.*;
 
 /**
  * Created by temp on 4/29/16.
@@ -127,6 +129,53 @@ public class TopoWrap {
             }
         });
         return sum(ackCounts).longValue();
+    }
+
+    public List<URL> getLogUrls(final String componentId) throws TException, MalformedURLException {
+        ComponentPageInfo componentPageInfo = cluster.getNimbusClient().getComponentPageInfo(id, componentId, null, false);
+        Map<String, ComponentAggregateStats> windowToStats = componentPageInfo.get_window_to_stats();
+        ComponentAggregateStats allTimeStats = windowToStats.get(":all-time");
+        //Long emitted = (Long) allTimeStats.getFieldValue(ComponentAggregateStats._Fields.findByName("emitted"));
+
+
+        List<ExecutorAggregateStats> execStats = componentPageInfo.get_exec_stats();
+        List<URL> urls = new ArrayList<>();
+        for (ExecutorAggregateStats execStat : execStats) {
+            ExecutorSummary execSummary = execStat.get_exec_summary();
+            String host = execSummary.get_host();
+            int port = execSummary.get_port();
+            String sep = "%2F"; //hex of "/"
+            //http://supervisor2:8000/download/DemoTest-26-1462229009%2F6703%2Fworker.log
+            int logViewerPort = 8000;
+            String downloadUrl = String.format("http://%s:%s/download", host, logViewerPort);
+            String urlStr = String.format("%s/%s%s%d%sworker.log", downloadUrl, id, sep, port, sep);
+            urls.add(new URL(urlStr));
+        }
+        return urls;
+    }
+
+    public String getLogs(final String componentId) throws TException, MalformedURLException {
+        List<URL> exclaim2Urls = getLogUrls(componentId);
+        log.info(exclaim2Urls.toString());
+        Collection<String> urlOuputs = Collections2.transform(exclaim2Urls, new Function<URL, String>() {
+            @Nullable
+            @Override
+            public String apply(@Nullable URL url) {
+                if (url == null) {
+                    return "";
+                }
+                String warnMessage = "Couldn't fetch url: " + url;
+                try {
+                    log.info("Fetching: " + url);
+                    return IOUtils.toString(url);
+                } catch (IOException e) {
+                    log.warn(warnMessage);
+                }
+                String stars = StringUtils.repeat("*", 30);
+                return stars + "   " + warnMessage + "   " + stars;
+            }
+        });
+        return StringUtils.join(urlOuputs, '\n');
     }
 
     private Number sum(Collection<? extends Number> nums) {
