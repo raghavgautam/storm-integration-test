@@ -247,6 +247,12 @@
                                     <value>${project.build.directory}/${project.build.finalName}.jar</value>
                                 </property>
                             </systemProperties>
+                            <properties>
+                                <property>
+                                    <name>listener</name>
+                                    <value>com.hortonworks.storm.st.meta.TestngListener</value>
+                                </property>
+                            </properties>
                         </configuration>
                     </execution>
                 </executions>
